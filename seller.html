@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard - Javatea Smart Order</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --primary: #2d6a4f;
+            --primary-dark: #1b4332;
+            --primary-light: #d8f3dc;
+            --bg-body: #f8fafc;
+            --white: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --danger: #ef4444;
+        }
+        body { background: var(--bg-body); color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding-bottom: 50px; }
+        nav { background: var(--white); height: 70px; display: flex; align-items: center; padding: 0 5%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .container { padding: 30px 5%; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--white); padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .stat-card h3 { margin: 0; font-size: 14px; color: var(--text-muted); text-transform: uppercase; }
+        .stat-card p { margin: 10px 0 0; font-size: 24px; font-weight: 800; color: var(--primary); }
+        
+        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        .panel { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .panel h2 { margin-top: 0; font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; border-bottom: 2px solid #f1f5f9; color: var(--text-muted); font-size: 13px; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 15px; font-family: inherit; }
+        input[type="number"] { width: 100%; }
+        
+        .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 12px; }
+        .btn-save { background: var(--primary); color: white; }
+        .btn-add { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 14px; }
+        .btn-status { background: var(--primary-light); color: var(--primary-dark); margin-top: 5px; }
+        .btn-print { background: var(--primary-dark); color: white; margin-top: 5px; }
+        .btn-delete { background: var(--danger); color: white; margin-top: 5px; opacity: 0.7; }
+        .btn-delete:hover { opacity: 1; }
+        
+        .badge-status { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+        .status-menunggu { background: #fee2e2; color: #991b1b; }
+        .status-diproses { background: #fef3c7; color: #92400e; }
+        .status-dikirim { background: #dbeafe; color: #1e40af; }
+        .status-selesai { background: #dcfce7; color: #166534; }
+
+        .order-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+        .order-item:last-child { border: none; }
+        .order-info b { display: block; font-size: 14px; }
+        .order-info span { font-size: 12px; color: var(--text-muted); }
+
+        @media print {
+            nav, .stats-grid, .panel:first-child, .btn, .btn-delete { display: none !important; }
+            .panel:last-child { width: 100% !important; border: none !important; box-shadow: none !important; }
+            .order-item { border: 1px solid #333; padding: 20px; margin-bottom: 20px; page-break-inside: avoid; border-radius: 0; }
+            body { background: white; }
+            .invoice-header { display: block !important; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        }
+        .invoice-header { display: none; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" style="text-decoration: none; color: var(--primary); font-weight: 800; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-arrow-left"></i> Kembali ke Toko
+        </a>
+        <h1 style="margin-left: 20px; font-size: 18px;">Javatea Seller Dashboard</h1>
+    </nav>
+
+    <div class="container">
+        <!-- Omzet Real-time -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Omzet Hari Ini</h3>
+                <p id="omzetDaily">Rp 0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Antrean Aktif</h3>
+                <p id="activeQueue">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Pesanan Menunggu</h3>
+                <p id="waitingOrders" style="color: var(--danger)">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Pesanan</h3>
+                <p id="totalOrders">0</p>
+            </div>
+            <button class="btn btn-save" onclick="syncKatalog()" style="height: fit-content; align-self: center;"><i class="fas fa-sync"></i> Update Foto Katalog</button>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <!-- Fitur Tambah Produk Baru -->
+                <div style="background: #eef2ff; padding: 25px; border-radius: 20px; border: 2px solid #6366f1; margin-bottom: 30px;">
+                    <h2 style="color: #4338ca;"><i class="fas fa-plus-square"></i> Tambah Produk Katalog Baru</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700;">Nama Produk</label>
+                            <input type="text" id="addName" placeholder="Contoh: Teh Oolong Spesial">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700;">Harga (Rp)</label>
+                            <input type="number" id="addPrice" placeholder="Contoh: 15000">
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 12px; font-weight: 700;">URL Gambar Produk</label>
+                        <input type="text" id="addImage" placeholder="https://images.unsplash.com/...">
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 12px; font-weight: 700;">Deskripsi Produk</label>
+                        <textarea id="addDesc" placeholder="Jelaskan keunggulan teh ini..."></textarea>
+                    </div>
+                    <button class="btn btn-add" style="background: #4338ca;" onclick="addNewProduct()"><i class="fas fa-save"></i> Tambahkan ke Katalog</button>
+                </div>
+
+                <!-- Halaman Tambah Pesanan (3.4.1 C) -->
+                <div style="background: var(--primary-light); padding: 20px; border-radius: 15px; margin-bottom: 30px;">
+                    <h2><i class="fas fa-plus-circle"></i> Tambah Pesanan Baru</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700;">Nama Pelanggan</label>
+                            <input type="text" id="newCustName" placeholder="Contoh: Andi">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700;">Pilih Minuman</label>
+                            <select id="newOrderTea"></select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700;">Jumlah</label>
+                            <input type="number" id="newOrderQty" value="1" min="1">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 700;">Catatan (Opsional)</label>
+                            <input type="text" id="newOrderNote" placeholder="Gula dikit, es banyak...">
+                        </div>
+                    </div>
+                    <button class="btn btn-add" onclick="manualOrder()"><i class="fas fa-paper-plane"></i> Proses Pesanan</button>
+                </div>
+
+                <!-- Manajemen Stok & Harga -->
+                <h2><i class="fas fa-boxes-stacked"></i> Manajemen Stok & Harga</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Produk Teh</th>
+                            <th>Harga (Rp)</th>
+                            <th>Stok</th>
+                            <th style="width: 80px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTable"></tbody>
+                </table>
+                <div id="lowStockWarning" style="margin-top: 15px; font-size: 12px; color: var(--danger);"></div>
+            </div>
+
+            <!-- Orderan Masuk -->
+            <div class="panel">
+                <div class="invoice-header">
+                    <h1 style="color: var(--primary); margin: 0;">Javatea Invoice</h1>
+                    <p>Bukti Transaksi Teh Nusantara Premium</p>
+                </div>
+                <h2><i class="fas fa-bell"></i> Pesanan Masuk</h2>
+                <div id="orderList"></div>
+                <hr style="margin: 20px 0; border: none; border-top: 2px dashed #e2e8f0;">
+                <h2><i class="fas fa-history"></i> Riwayat Selesai</h2>
+                <div id="historyList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Inisialisasi Firebase (Ganti dengan config Anda dari Firebase Console)
+        const firebaseConfig = {
+  apiKey: "AIzaSyB1NWIvt6Jf2KkQni0vXLnoya7W8bOh68s",
+  authDomain: "web-farmasi.firebaseapp.com",
+  databaseURL: "https://web-farmasi-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "web-farmasi",
+  storageBucket: "web-farmasi.firebasestorage.app",
+  messagingSenderId: "752997003664",
+  appId: "1:752997003664:web:b9ff36ae76b952bfae4315"
+};
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let currentTeas = [];
+
+        function loadDashboard() {
+            db.ref('teas').on('value', snapshot => {
+                currentTeas = snapshot.val() || [];
+                renderInventory(currentTeas);
+                
+                // Populate Select Menu for Manual Order
+                const select = document.getElementById('newOrderTea');
+                select.innerHTML = currentTeas.map(t => `<option value="${t.id}">${t.name} - Rp${t.price}</option>`).join('');
+
+                const teas = currentTeas;
+                const lowStock = teas.filter(t => (t.stock || 0) < 5);
+                document.getElementById('lowStockWarning').innerHTML = lowStock.length > 0 ? 
+                    `<i class="fas fa-exclamation-triangle"></i> ${lowStock.length} produk hampir habis!` : "";
+            });
+
+            db.ref('orders').on('value', snapshot => {
+                const ordersObj = snapshot.val() || {};
+                renderOrders(ordersObj);
+                calculateOmset(Object.values(ordersObj));
+            });
+        }
+
+        function renderInventory(teas) {
+            const tbody = document.getElementById('inventoryTable');
+            tbody.innerHTML = teas.map(tea => `
+                <tr>
+                    <td style="display: flex; align-items: center; gap: 15px;">
+                        <img src="${tea.image}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 10px; border: 1px solid #eee;">
+                        <div><b>${tea.name}</b><br><small><i class="fas fa-leaf"></i> ${tea.category}</small></div>
+                    </td>
+                    <td><input type="number" id="price-${tea.id}" value="${tea.price}"></td>
+                    <td><input type="number" id="stock-${tea.id}" value="${tea.stock || 0}" style="width: 60px;"></td>
+                    <td><button class="btn btn-save" onclick="updateTea(${tea.id})">Simpan</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function updateTea(id) {
+            db.ref('teas').once('value').then(snapshot => {
+                const teas = snapshot.val() || [];
+                const newPrice = document.getElementById(`price-${id}`).value;
+                const newStock = document.getElementById(`stock-${id}`).value;
+
+                const index = teas.findIndex(t => t.id === id);
+                if (index !== -1) {
+                    teas[index].price = parseInt(newPrice);
+                    teas[index].stock = parseInt(newStock);
+
+                    db.ref('teas').set(teas).then(() => {
+                        alert("Data diperbarui!");
+                    });
+                }
+            });
+        }
+
+        // Manual Order Logic (Sesuai Poin 3.4.1 C)
+        function manualOrder() {
+            const name = document.getElementById('newCustName').value;
+            const teaId = document.getElementById('newOrderTea').value;
+            const qty = document.getElementById('newOrderQty').value;
+            const note = document.getElementById('newOrderNote').value;
+
+            if (!name) return alert("Nama pelanggan harus diisi!");
+
+            const tea = currentTeas.find(t => t.id == teaId);
+            
+            db.ref('orders').once('value').then(snap => {
+                const count = snap.numChildren();
+                const queueNum = (count % 100) + 1;
+
+                const newOrder = {
+                    orderId: 'M-' + Date.now().toString().slice(-6),
+                    queueNumber: queueNum,
+                    teaName: `${tea.name} (x${qty})`,
+                    price: tea.price * qty,
+                    date: new Date().toISOString(),
+                    customer: { name: name, phone: 'Counter', address: 'Dine-in' },
+                    payment: 'Tunai (Kasir)',
+                    status: "Menunggu",
+                    note: note || "-"
+                };
+
+                db.ref('orders').push(newOrder).then(() => {
+                    alert(`Pesanan Berhasil! Nomor Antrean: ${queueNum}`);
+                    document.getElementById('newCustName').value = "";
+                    document.getElementById('newOrderNote').value = "";
+                });
+            });
+        }
+
+        function syncKatalog() {
+            if(confirm("Perbarui semua foto produk di database sesuai sistem terbaru?")) {
+                db.ref('teas').set(currentTeas).then(() => alert("Katalog berhasil disinkronkan!"));
+            }
+        }
+
+        function renderOrders(ordersObj) {
+            const activeList = document.getElementById('orderList');
+            const historyList = document.getElementById('historyList');
+            const orderEntries = Object.entries(ordersObj);
+            
+            document.getElementById('totalOrders').innerText = orderEntries.length;
+            document.getElementById('activeQueue').innerText = orderEntries.filter(([_, o]) => o.status !== 'Selesai').length;
+            document.getElementById('waitingOrders').innerText = orderEntries.filter(([_, o]) => o.status === 'Menunggu').length;
+
+            if (orderEntries.length === 0) {
+                activeList.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>Belum ada pesanan.</p>";
+                historyList.innerHTML = "";
+                return;
+            }
+
+            const activeHTML = [];
+            const historyHTML = [];
+
+            orderEntries.slice().reverse().forEach(([key, order]) => {
+                const statusClass = `status-${(order.status || 'Menunggu').toLowerCase()}`;
+                const itemHTML = `
+                <div class="order-item" id="order-${key}" style="flex-direction: column; gap: 5px; padding: 15px 0;">
+                    <div class="order-info">
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="background: var(--primary); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800;">
+                                    ${order.queueNumber || '-'}
+                                </div>
+                                <div>
+                                    <b>${order.teaName}</b>
+                                    <span class="badge-status ${statusClass}">${order.status || 'Menunggu'}</span>
+                                </div>
+                            </div>
+                            <b style="color: var(--primary)">Rp ${order.price.toLocaleString()}</b>
+                        </div>
+                        <span style="font-size: 11px;">ID: ${order.orderId} | ${new Date(order.date).toLocaleString('id-ID')}</span>
+                    </div>
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 10px; margin-top: 5px; font-size: 13px;">
+                        <div style="margin-bottom: 5px;">
+                            <i class="fas fa-user"></i> <b>${order.customer?.name || 'Guest'}</b> (${order.customer?.phone || '-'})
+                        </div>
+                        <div style="margin-bottom: 5px; color: #1b4332;">
+                            <i class="fas fa-sticky-note"></i> Catatan: <i>${order.note || '-'}</i>
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 12px; margin-bottom: 5px;">
+                            <i class="fas fa-map-marker-alt"></i> ${order.customer?.address || 'No Address'}
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
+                            <div>
+                                <span class="badge" style="background: #e0f2f1; color: var(--primary-dark); padding: 2px 8px; border-radius: 5px; font-size: 10px; margin-right: 5px;">${order.payment || 'Tunai'}</span>
+                            </div>
+                            <div class="btn-group">
+                                ${order.status === 'Menunggu' ? `<button class="btn btn-status" onclick="updateOrderStatus('${key}', 'Diproses')">Terima & Proses</button>` : ''}
+                                ${order.status === 'Diproses' ? `<button class="btn btn-status" onclick="updateOrderStatus('${key}', 'Dikirim')">Kirim Pesanan</button>` : ''}
+                                ${order.status === 'Dikirim' ? `<button class="btn btn-status" style="background:var(--primary); color:white" onclick="updateOrderStatus('${key}', 'Selesai')">Selesaikan</button>` : ''}
+                                <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i></button>
+                                <button class="btn btn-delete" onclick="deleteOrder('${key}')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+
+                if (order.status === 'Selesai') historyHTML.push(itemHTML);
+                else activeHTML.push(itemHTML);
+            });
+
+            activeList.innerHTML = activeHTML.length ? activeHTML.join('') : "<p style='text-align:center; color:var(--text-muted)'>Semua antrean telah diproses.</p>";
+            historyList.innerHTML = historyHTML.join('');
+        }
+
+        function updateOrderStatus(key, status) {
+            db.ref('orders/' + key).update({ status: status }).then(() => {
+                alert("Status pesanan diperbarui!");
+            });
+        }
+
+        function deleteOrder(key) {
+            if(confirm("Hapus data pesanan ini?")) {
+                db.ref('orders/' + key).remove();
+            }
+        }
+
+        function calculateOmset(orders) {
+            const now = new Date();
+            let daily = 0;
+
+            orders.forEach(order => {
+                const orderDate = new Date(order.date);
+                // Harian
+                if (orderDate.toDateString() === now.toDateString() && order.status === 'Selesai') {
+                    daily += order.price;
+                }
+            });
+
+            document.getElementById('omzetDaily').innerText = 'Rp ' + daily.toLocaleString();
+        }
+
+        // Initial Load
+        loadDashboard();
+    </script>
+</body>
+</html>
