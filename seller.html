@@ -3,397 +3,538 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seller Dashboard - Javatea Smart Order</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <title>JavaTea Pro Dashboard - Seller Center</title>
+    <!-- FontAwesome & Google Fonts Plus Jakarta Sans -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #2d6a4f;
-            --primary-dark: #1b4332;
-            --primary-light: #d8f3dc;
-            --bg-body: #f8fafc;
-            --white: #ffffff;
+            --primary: #1e293b;
+            --accent: #059669;
+            --accent-light: #ecfdf5;
+            --danger: #e11d48;
+            --warning: #f59e0b;
+            --bg-body: #f1f5f9;
+            --surface: #ffffff;
             --text-main: #1e293b;
-            --text-muted: #64748b;
-            --danger: #ef4444;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --radius: 16px;
         }
-        body { background: var(--bg-body); color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding-bottom: 50px; }
-        nav { background: var(--white); height: 70px; display: flex; align-items: center; padding: 0 5%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .container { padding: 30px 5%; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--white); padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .stat-card h3 { margin: 0; font-size: 14px; color: var(--text-muted); text-transform: uppercase; }
-        .stat-card p { margin: 10px 0 0; font-size: 24px; font-weight: 800; color: var(--primary); }
-        
-        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
-        .panel { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .panel h2 { margin-top: 0; font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            letter-spacing: -0.01em;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--primary);
+            color: white;
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .brand { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 800; margin-bottom: 40px; }
+        .brand img { width: 35px; height: 35px; border-radius: 10px; object-fit: cover; }
+
+        .menu-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .menu-item a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: var(--radius);
+            transition: 0.3s;
+        }
+
+        .menu-item.active a, .menu-item a:hover { background: rgba(255,255,255,0.1); color: white; }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 40px;
+            min-width: 0;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .card-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+
+        .panel {
+            background: var(--surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 28px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .panel-title { font-size: 18px; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label { font-size: 13px; font-weight: 700; color: var(--text-main); }
+
+        .form-group input, .form-group select {
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-light); }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); }
+        .btn-ghost { background: #f8fafc; color: var(--text-main); border: 1px solid var(--border); }
 
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 12px; border-bottom: 2px solid #f1f5f9; color: var(--text-muted); font-size: 13px; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 15px; font-family: inherit; }
-        input[type="number"] { width: 100%; }
-        
-        .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 12px; }
-        .btn-save { background: var(--primary); color: white; }
-        .btn-add { background: var(--primary); color: white; width: 100%; padding: 15px; font-size: 14px; }
-        .btn-status { background: var(--primary-light); color: var(--primary-dark); margin-top: 5px; }
-        .btn-print { background: var(--primary-dark); color: white; margin-top: 5px; }
-        .btn-delete { background: var(--danger); color: white; margin-top: 5px; opacity: 0.7; }
-        .btn-delete:hover { opacity: 1; }
-        
-        .badge-status { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; }
-        .status-menunggu { background: #fee2e2; color: #991b1b; }
-        .status-diproses { background: #fef3c7; color: #92400e; }
-        .status-dikirim { background: #dbeafe; color: #1e40af; }
-        .status-selesai { background: #dcfce7; color: #166534; }
+        th { text-align: left; padding: 16px; font-size: 12px; color: var(--text-sub); border-bottom: 2px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
+        td { padding: 16px; font-size: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .prod-img { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; }
 
-        .order-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
-        .order-item:last-child { border: none; }
-        .order-info b { display: block; font-size: 14px; }
-        .order-info span { font-size: 12px; color: var(--text-muted); }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; }
+        .badge-green { background: var(--accent-light); color: var(--accent); }
+        .badge-gray { background: #f1f5f9; color: #475569; }
 
-        @media print {
-            nav, .stats-grid, .panel:first-child, .btn, .btn-delete { display: none !important; }
-            .panel:last-child { width: 100% !important; border: none !important; box-shadow: none !important; }
-            .order-item { border: 1px solid #333; padding: 20px; margin-bottom: 20px; page-break-inside: avoid; border-radius: 0; }
-            body { background: white; }
-            .invoice-header { display: block !important; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
         }
-        .invoice-header { display: none; }
+        .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-sub); }
+        .search-box input { width: 100%; padding: 12px 12px 12px 40px; border-radius: 12px; border: 1px solid var(--border); }
+
+        #btnSubmitProduct:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+        #upload-progress { height: 4px; width: 0; background: var(--accent); transition: 0.3s; margin-top: 10px; border-radius: 2px; }
     </style>
 </head>
 <body>
-    <nav>
-        <a href="index.html" style="text-decoration: none; color: var(--primary); font-weight: 800; display: flex; align-items: center; gap: 10px;">
-            <i class="fas fa-arrow-left"></i> Kembali ke Toko
-        </a>
-        <h1 style="margin-left: 20px; font-size: 18px;">Javatea Seller Dashboard</h1>
-    </nav>
 
-    <div class="container">
-        <!-- Omzet Real-time -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Omzet Hari Ini</h3>
-                <p id="omzetDaily">Rp 0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Antrean Aktif</h3>
-                <p id="activeQueue">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Pesanan Menunggu</h3>
-                <p id="waitingOrders" style="color: var(--danger)">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Total Pesanan</h3>
-                <p id="totalOrders">0</p>
-            </div>
-            <button class="btn btn-save" onclick="syncKatalog()" style="height: fit-content; align-self: center;"><i class="fas fa-sync"></i> Update Foto Katalog</button>
+    <div class="sidebar">
+        <div class="brand">
+            <img src="img.jpeg" alt="Logo">
+            <span>Javatea Seller</span>
         </div>
-
-        <div class="main-grid">
-            <div class="panel">
-                <!-- Fitur Tambah Produk Baru -->
-                <div style="background: #eef2ff; padding: 25px; border-radius: 20px; border: 2px solid #6366f1; margin-bottom: 30px;">
-                    <h2 style="color: #4338ca;"><i class="fas fa-plus-square"></i> Tambah Produk Katalog Baru</h2>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div>
-                            <label style="font-size: 12px; font-weight: 700;">Nama Produk</label>
-                            <input type="text" id="addName" placeholder="Contoh: Teh Oolong Spesial">
-                        </div>
-                        <div>
-                            <label style="font-size: 12px; font-weight: 700;">Harga (Rp)</label>
-                            <input type="number" id="addPrice" placeholder="Contoh: 15000">
-                        </div>
-                    </div>
-                    <div style="margin-top: 10px;">
-                        <label style="font-size: 12px; font-weight: 700;">URL Gambar Produk</label>
-                        <input type="text" id="addImage" placeholder="https://images.unsplash.com/...">
-                    </div>
-                    <div style="margin-top: 10px;">
-                        <label style="font-size: 12px; font-weight: 700;">Deskripsi Produk</label>
-                        <textarea id="addDesc" placeholder="Jelaskan keunggulan teh ini..."></textarea>
-                    </div>
-                    <button class="btn btn-add" style="background: #4338ca;" onclick="addNewProduct()"><i class="fas fa-save"></i> Tambahkan ke Katalog</button>
-                </div>
-
-                <!-- Halaman Tambah Pesanan (3.4.1 C) -->
-                <div style="background: var(--primary-light); padding: 20px; border-radius: 15px; margin-bottom: 30px;">
-                    <h2><i class="fas fa-plus-circle"></i> Tambah Pesanan Baru</h2>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div>
-                            <label style="font-size: 12px; font-weight: 700;">Nama Pelanggan</label>
-                            <input type="text" id="newCustName" placeholder="Contoh: Andi">
-                        </div>
-                        <div>
-                            <label style="font-size: 12px; font-weight: 700;">Pilih Minuman</label>
-                            <select id="newOrderTea"></select>
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div>
-                            <label style="font-size: 12px; font-weight: 700;">Jumlah</label>
-                            <input type="number" id="newOrderQty" value="1" min="1">
-                        </div>
-                        <div>
-                            <label style="font-size: 12px; font-weight: 700;">Catatan (Opsional)</label>
-                            <input type="text" id="newOrderNote" placeholder="Gula dikit, es banyak...">
-                        </div>
-                    </div>
-                    <button class="btn btn-add" onclick="manualOrder()"><i class="fas fa-paper-plane"></i> Proses Pesanan</button>
-                </div>
-
-                <!-- Manajemen Stok & Harga -->
-                <h2><i class="fas fa-boxes-stacked"></i> Manajemen Stok & Harga</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nama Produk Teh</th>
-                            <th>Harga (Rp)</th>
-                            <th>Stok</th>
-                            <th style="width: 80px;">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventoryTable"></tbody>
-                </table>
-                <div id="lowStockWarning" style="margin-top: 15px; font-size: 12px; color: var(--danger);"></div>
-            </div>
-
-            <!-- Orderan Masuk -->
-            <div class="panel">
-                <div class="invoice-header">
-                    <h1 style="color: var(--primary); margin: 0;">Javatea Invoice</h1>
-                    <p>Bukti Transaksi Teh Nusantara Premium</p>
-                </div>
-                <h2><i class="fas fa-bell"></i> Pesanan Masuk</h2>
-                <div id="orderList"></div>
-                <hr style="margin: 20px 0; border: none; border-top: 2px dashed #e2e8f0;">
-                <h2><i class="fas fa-history"></i> Riwayat Selesai</h2>
-                <div id="historyList"></div>
-            </div>
-        </div>
+        <ul class="menu-list">
+            <li class="menu-item active" id="nav-dashboard" onclick="switchTab('dashboard')">
+                <a href="#"><i class="fas fa-th-large"></i> Katalog Produk</a>
+            </li>
+            <li class="menu-item" id="nav-orders" onclick="switchTab('orders')">
+                <a href="#"><i class="fas fa-shopping-bag"></i> Pesanan Masuk</a>
+            </li>
+        </ul>
     </div>
 
+    <div class="main-content">
+        <div class="header">
+            <div>
+                <h1 style="font-size: 28px; font-weight: 800;" id="page-title">Katalog Produk</h1>
+                <p style="color: var(--text-sub); font-size: 14px; margin-top: 4px;" id="page-desc">Kelola ketersediaan menu JavaTea secara real-time</p>
+            </div>
+            <button class="btn btn-primary" onclick="window.scrollTo({top: document.getElementById('panel-add').offsetTop - 20, behavior: 'smooth'})">
+                <i class="fas fa-plus"></i> Tambah Menu Baru
+            </button>
+        </div>
+
+        <div id="view-dashboard">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="card-icon" style="background: #eff6ff; color: #2563eb;"><i class="fas fa-mug-hot"></i></div>
+                    <div>
+                        <p style="color: var(--text-sub); font-size: 13px; font-weight: 600;">Menu Aktif</p>
+                        <h3 id="statTotal" style="font-size: 24px; font-weight: 800;">0</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="card-icon" style="background: var(--accent-light); color: var(--accent);"><i class="fas fa-chart-line"></i></div>
+                    <div>
+                        <p style="color: var(--text-sub); font-size: 13px; font-weight: 600;">Estimasi Omzet</p>
+                        <h3 id="statIncome" style="font-size: 24px; font-weight: 800;">Rp 0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" id="panel-add">
+                <div class="panel-title" style="color: var(--accent);">
+                    <i class="fas fa-plus-circle"></i> Tambah Produk Katalog Baru
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nama Produk <span style="color: var(--danger);">*</span></label>
+                        <input type="text" id="addName" placeholder="Contoh: Ice Matcha Latte">
+                    </div>
+                    <div class="form-group">
+                        <label>Harga Jual (Rp) <span style="color: var(--danger);">*</span></label>
+                        <input type="number" id="addPrice" placeholder="Contoh: 15000">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Kategori</label>
+                        <select id="addCategory">
+                            <option value="Green Tea">Green Tea Series</option>
+                            <option value="Milk Tea">Milk Tea Series</option>
+                            <option value="Coffee">Coffee Menu</option>
+                            <option value="Snack">Snacks</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Ukuran / Kemasan</label>
+                        <input type="text" id="addDose" placeholder="Contoh: 1 Cup atau Regular">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Unggah Foto <span style="color: var(--text-sub); font-weight: normal;">(Ukuran disarankan 1:1)</span></label>
+                    <input type="file" id="addImageFile" accept="image/*">
+                    <div id="upload-progress"></div>
+                </div>
+                <button class="btn btn-primary" id="btnSubmitProduct" onclick="addNewProduct()">
+                    <i class="fas fa-save"></i> Simpan ke Etalase
+                </button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title"><span><i class="fas fa-list"></i> Inventori Aktif</span></div>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchProduct" placeholder="Cari menu..." onkeyup="filterTable('productTableBody', this.value)">
+                </div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Gambar</th>
+                                <th>Nama Produk</th>
+                                <th>Kategori</th>
+                                <th>Ukuran</th>
+                                <th>Harga</th>
+                                <th style="text-align: right;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productTableBody">
+                            <tr><td colspan="6" style="text-align: center;">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-orders" style="display: none;">
+            <div class="panel">
+                <div class="panel-title">
+                    <span><i class="fas fa-shopping-bag"></i> Antrean Pesanan Pelanggan</span>
+                    <button class="btn btn-ghost" onclick="clearFinishedHistory()" style="font-size: 12px; color: var(--danger);">Bersihkan Riwayat</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Waktu</th>
+                                <th>Pelanggan</th>
+                                <th>Pesanan</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <!-- Firebase Storage dihapus karena kita menggunakan Base64 di Realtime Database -->
+
     <script>
-        // Inisialisasi Firebase (Ganti dengan config Anda dari Firebase Console)
         const firebaseConfig = {
-  apiKey: "AIzaSyB1NWIvt6Jf2KkQni0vXLnoya7W8bOh68s",
-  authDomain: "web-farmasi.firebaseapp.com",
-  databaseURL: "https://web-farmasi-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "web-farmasi",
-  storageBucket: "web-farmasi.firebasestorage.app",
-  messagingSenderId: "752997003664",
-  appId: "1:752997003664:web:b9ff36ae76b952bfae4315"
+  apiKey: "AIzaSyAtWjFNUHq-myySpOn7XtCotJF0ssjexfI",
+  authDomain: "javatea-675f1.firebaseapp.com",
+  projectId: "javatea-675f1",
+  storageBucket: "javatea-675f1.firebasestorage.app",
+  messagingSenderId: "356502402637",
+  appId: "1:356502402637:web:76add8cfbad68a9a5b8e04"
 };
 
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        let currentTeas = [];
 
-        function loadDashboard() {
-            db.ref('teas').on('value', snapshot => {
-                currentTeas = snapshot.val() || [];
-                renderInventory(currentTeas);
-                
-                // Populate Select Menu for Manual Order
-                const select = document.getElementById('newOrderTea');
-                select.innerHTML = currentTeas.map(t => `<option value="${t.id}">${t.name} - Rp${t.price}</option>`).join('');
+        window.onload = function() {
+            loadCatalogData();
+            loadOrdersData();
+        };
 
-                const teas = currentTeas;
-                const lowStock = teas.filter(t => (t.stock || 0) < 5);
-                document.getElementById('lowStockWarning').innerHTML = lowStock.length > 0 ? 
-                    `<i class="fas fa-exclamation-triangle"></i> ${lowStock.length} produk hampir habis!` : "";
-            });
+        function switchTab(tabName) {
+            const viewDashboard = document.getElementById('view-dashboard');
+            const viewOrders = document.getElementById('view-orders');
+            const navDashboard = document.getElementById('nav-dashboard');
+            const navOrders = document.getElementById('nav-orders');
 
-            db.ref('orders').on('value', snapshot => {
-                const ordersObj = snapshot.val() || {};
-                renderOrders(ordersObj);
-                calculateOmset(Object.values(ordersObj));
-            });
-        }
-
-        function renderInventory(teas) {
-            const tbody = document.getElementById('inventoryTable');
-            tbody.innerHTML = teas.map(tea => `
-                <tr>
-                    <td style="display: flex; align-items: center; gap: 15px;">
-                        <img src="${tea.image}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 10px; border: 1px solid #eee;">
-                        <div><b>${tea.name}</b><br><small><i class="fas fa-leaf"></i> ${tea.category}</small></div>
-                    </td>
-                    <td><input type="number" id="price-${tea.id}" value="${tea.price}"></td>
-                    <td><input type="number" id="stock-${tea.id}" value="${tea.stock || 0}" style="width: 60px;"></td>
-                    <td><button class="btn btn-save" onclick="updateTea(${tea.id})">Simpan</button></td>
-                </tr>
-            `).join('');
-        }
-
-        function updateTea(id) {
-            db.ref('teas').once('value').then(snapshot => {
-                const teas = snapshot.val() || [];
-                const newPrice = document.getElementById(`price-${id}`).value;
-                const newStock = document.getElementById(`stock-${id}`).value;
-
-                const index = teas.findIndex(t => t.id === id);
-                if (index !== -1) {
-                    teas[index].price = parseInt(newPrice);
-                    teas[index].stock = parseInt(newStock);
-
-                    db.ref('teas').set(teas).then(() => {
-                        alert("Data diperbarui!");
-                    });
-                }
-            });
-        }
-
-        // Manual Order Logic (Sesuai Poin 3.4.1 C)
-        function manualOrder() {
-            const name = document.getElementById('newCustName').value;
-            const teaId = document.getElementById('newOrderTea').value;
-            const qty = document.getElementById('newOrderQty').value;
-            const note = document.getElementById('newOrderNote').value;
-
-            if (!name) return alert("Nama pelanggan harus diisi!");
-
-            const tea = currentTeas.find(t => t.id == teaId);
+            viewDashboard.style.display = tabName === 'dashboard' ? 'block' : 'none';
+            viewOrders.style.display = tabName === 'orders' ? 'block' : 'none';
+            navDashboard.classList.toggle('active', tabName === 'dashboard');
+            navOrders.classList.toggle('active', tabName === 'orders');
             
-            db.ref('orders').once('value').then(snap => {
-                const count = snap.numChildren();
-                const queueNum = (count % 100) + 1;
+            document.getElementById('page-title').innerText = tabName === 'dashboard' ? "Katalog Produk" : "Antrean Pesanan";
+        }
 
-                const newOrder = {
-                    orderId: 'M-' + Date.now().toString().slice(-6),
-                    queueNumber: queueNum,
-                    teaName: `${tea.name} (x${qty})`,
-                    price: tea.price * qty,
-                    date: new Date().toISOString(),
-                    customer: { name: name, phone: 'Counter', address: 'Dine-in' },
-                    payment: 'Tunai (Kasir)',
-                    status: "Menunggu",
-                    note: note || "-"
+        function filterTable(tableId, query) {
+            const rows = document.getElementById(tableId).getElementsByTagName('tr');
+            const q = query.toLowerCase();
+            for (let row of rows) {
+                row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
+            }
+        }
+
+        // Fungsi pembantu untuk mengompres dan mengubah gambar ke Base64
+        function getBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    // Kita gunakan canvas untuk mengecilkan ukuran gambar agar database tidak berat
+                    const img = new Image();
+                    img.src = reader.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 400; // Ukuran optimal untuk web
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7)); // Kompresi 70%
+                    };
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function addNewProduct() {
+            const name = document.getElementById('addName').value.trim();
+            const price = parseInt(document.getElementById('addPrice').value);
+            const category = document.getElementById('addCategory').value;
+            const dose = document.getElementById('addDose').value.trim() || "1 Cup";
+            const imageFile = document.getElementById('addImageFile').files[0];
+
+            if (!name || !price || isNaN(price)) {
+                return alert("Gagal: Nama, Harga, dan Foto Produk wajib diisi!");
+            }
+
+            if (!imageFile) {
+                return alert("Gagal: Silakan pilih foto produk terlebih dahulu!");
+            }
+
+            const btn = document.getElementById('btnSubmitProduct');
+            const progress = document.getElementById('upload-progress');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses Gambar...';
+            btn.disabled = true;
+
+            try {
+                // Mengubah gambar ke Base64 string
+                const imageUrl = await getBase64(imageFile);
+                progress.style.width = "100%";
+
+                const snapshot = await db.ref('teas').once('value');
+                let teas = snapshot.val() || [];
+                if (!Array.isArray(teas)) teas = Object.values(teas);
+
+                const nextId = teas.length > 0 ? Math.max(...teas.map(t => (t ? (t.id || 0) : 0))) + 1 : 1;
+
+                const itemPayload = {
+                    id: nextId,
+                    name: name,
+                    dose: dose,
+                    category: category,
+                    badge: category.includes('Tea') ? 'badge-green' : 'badge-gray',
+                    price: price,
+                    sold: 0,
+                    image: imageUrl
                 };
 
-                db.ref('orders').push(newOrder).then(() => {
-                    alert(`Pesanan Berhasil! Nomor Antrean: ${queueNum}`);
-                    document.getElementById('newCustName').value = "";
-                    document.getElementById('newOrderNote').value = "";
+                teas.push(itemPayload);
+                await db.ref('teas').set(teas);
+                
+                // Reset UI
+                document.getElementById('addName').value = '';
+                document.getElementById('addPrice').value = '';
+                document.getElementById('addImageFile').value = '';
+                progress.style.width = "0";
+                alert("Produk berhasil ditambahkan!");
+            } catch (err) {
+                console.error("Detail Error:", err);
+                progress.style.width = "0";
+                
+                if (err.code === 'storage/unauthorized') {
+                    alert("Error: Izin ditolak. Periksa Rules di Firebase Storage (set ke 'allow read, write: if true').");
+                } else if (err.message.includes('CORS') || err.code === 'storage/retry-limit-exceeded') {
+                    alert("CORS Error terdeteksi! Jalankan perintah 'gsutil cors' di Google Cloud Shell untuk mengizinkan unggahan dari localhost.");
+                } else {
+                    alert("Gagal mengunggah: " + err.message);
+                }
+            } finally {
+                btn.innerHTML = '<i class="fas fa-save"></i> Simpan ke Etalase';
+                btn.disabled = false;
+            }
+        }
+
+        function loadCatalogData() {
+            db.ref('teas').on('value', (snapshot) => {
+                const tbody = document.getElementById('productTableBody');
+                let teas = snapshot.val() || [];
+                if (!Array.isArray(teas)) teas = Object.values(teas);
+
+                const validProducts = teas.filter(t => t !== null);
+                document.getElementById('statTotal').innerText = validProducts.length;
+                
+                tbody.innerHTML = '';
+                teas.forEach((tea) => {
+                    if (!tea) return;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><img src="${tea.image}" class="prod-img" alt="Foto" onerror="this.src='img.jpeg'"></td>
+                        <td><b>${tea.name}</b></td>
+                        <td><span class="badge ${tea.badge || 'badge-gray'}">${tea.category}</span></td>
+                        <td>${tea.dose}</td>
+                        <td style="font-weight: 700;">Rp ${tea.price.toLocaleString('id-ID')}</td>
+                        <td style="text-align: right;">
+                            <button class="btn btn-ghost" style="padding: 6px; color: var(--danger);" onclick="deleteProduct(${tea.id})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
                 });
             });
         }
 
-        function syncKatalog() {
-            if(confirm("Perbarui semua foto produk di database sesuai sistem terbaru?")) {
-                db.ref('teas').set(currentTeas).then(() => alert("Katalog berhasil disinkronkan!"));
+        function deleteProduct(productId) {
+            if (confirm("Hapus produk ini dari etalase toko?")) {
+                db.ref('teas').once('value').then(snapshot => {
+                    let teas = snapshot.val() || [];
+                    if (!Array.isArray(teas)) teas = Object.values(teas);
+                    const updatedTeas = teas.filter(tea => tea && tea.id !== productId);
+                    db.ref('teas').set(updatedTeas);
+                });
             }
         }
 
-        function renderOrders(ordersObj) {
-            const activeList = document.getElementById('orderList');
-            const historyList = document.getElementById('historyList');
-            const orderEntries = Object.entries(ordersObj);
-            
-            document.getElementById('totalOrders').innerText = orderEntries.length;
-            document.getElementById('activeQueue').innerText = orderEntries.filter(([_, o]) => o.status !== 'Selesai').length;
-            document.getElementById('waitingOrders').innerText = orderEntries.filter(([_, o]) => o.status === 'Menunggu').length;
+        function loadOrdersData() {
+            db.ref('orders').on('value', (snapshot) => {
+                const tbody = document.getElementById('ordersTableBody');
+                tbody.innerHTML = '';
+                let kalkulasiOmzet = 0;
 
-            if (orderEntries.length === 0) {
-                activeList.innerHTML = "<p style='color:var(--text-muted); text-align:center;'>Belum ada pesanan.</p>";
-                historyList.innerHTML = "";
-                return;
-            }
+                if (!snapshot.exists()) return;
 
-            const activeHTML = [];
-            const historyHTML = [];
+                snapshot.forEach((snap) => {
+                    const key = snap.key;
+                    const order = snap.val();
+                    if (order.status === 'Selesai') kalkulasiOmzet += (order.total || 0);
 
-            orderEntries.slice().reverse().forEach(([key, order]) => {
-                const statusClass = `status-${(order.status || 'Menunggu').toLowerCase()}`;
-                const itemHTML = `
-                <div class="order-item" id="order-${key}" style="flex-direction: column; gap: 5px; padding: 15px 0;">
-                    <div class="order-info">
-                        <div style="display: flex; justify-content: space-between; width: 100%;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="background: var(--primary); color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800;">
-                                    ${order.queueNumber || '-'}
-                                </div>
-                                <div>
-                                    <b>${order.teaName}</b>
-                                    <span class="badge-status ${statusClass}">${order.status || 'Menunggu'}</span>
-                                </div>
-                            </div>
-                            <b style="color: var(--primary)">Rp ${order.price.toLocaleString()}</b>
-                        </div>
-                        <span style="font-size: 11px;">ID: ${order.orderId} | ${new Date(order.date).toLocaleString('id-ID')}</span>
-                    </div>
-                    <div style="background: #f8fafc; padding: 10px; border-radius: 10px; margin-top: 5px; font-size: 13px;">
-                        <div style="margin-bottom: 5px;">
-                            <i class="fas fa-user"></i> <b>${order.customer?.name || 'Guest'}</b> (${order.customer?.phone || '-'})
-                        </div>
-                        <div style="margin-bottom: 5px; color: #1b4332;">
-                            <i class="fas fa-sticky-note"></i> Catatan: <i>${order.note || '-'}</i>
-                        </div>
-                        <div style="color: var(--text-muted); font-size: 12px; margin-bottom: 5px;">
-                            <i class="fas fa-map-marker-alt"></i> ${order.customer?.address || 'No Address'}
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
-                            <div>
-                                <span class="badge" style="background: #e0f2f1; color: var(--primary-dark); padding: 2px 8px; border-radius: 5px; font-size: 10px; margin-right: 5px;">${order.payment || 'Tunai'}</span>
-                            </div>
-                            <div class="btn-group">
-                                ${order.status === 'Menunggu' ? `<button class="btn btn-status" onclick="updateOrderStatus('${key}', 'Diproses')">Terima & Proses</button>` : ''}
-                                ${order.status === 'Diproses' ? `<button class="btn btn-status" onclick="updateOrderStatus('${key}', 'Dikirim')">Kirim Pesanan</button>` : ''}
-                                ${order.status === 'Dikirim' ? `<button class="btn btn-status" style="background:var(--primary); color:white" onclick="updateOrderStatus('${key}', 'Selesai')">Selesaikan</button>` : ''}
-                                <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i></button>
-                                <button class="btn btn-delete" onclick="deleteOrder('${key}')"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                `;
+                    let itemsHtml = order.items ? order.items.map(it => `${it.qty}x ${it.name}`).join(', ') : '-';
+                    let statusClass = order.status === 'Selesai' ? 'badge-green' : 'badge-gray';
 
-                if (order.status === 'Selesai') historyHTML.push(itemHTML);
-                else activeHTML.push(itemHTML);
-            });
-
-            activeList.innerHTML = activeHTML.length ? activeHTML.join('') : "<p style='text-align:center; color:var(--text-muted)'>Semua antrean telah diproses.</p>";
-            historyList.innerHTML = historyHTML.join('');
-        }
-
-        function updateOrderStatus(key, status) {
-            db.ref('orders/' + key).update({ status: status }).then(() => {
-                alert("Status pesanan diperbarui!");
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="font-size: 12px; color: var(--text-sub);">${order.waktu}</td>
+                        <td><b>${order.nama}</b><br><small>${order.telepon}</small></td>
+                        <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${itemsHtml}</td>
+                        <td style="font-weight: 700;">Rp ${order.total.toLocaleString('id-ID')}</td>
+                        <td><span class="badge ${statusClass}">${order.status}</span></td>
+                        <td style="text-align: right;">
+                            ${order.status === 'Antrian' ? `<button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="db.ref('orders/${key}').update({status: 'Selesai'})">Selesaikan</button>` : ''}
+                            <a href="https://wa.me/${order.telepon}" target="_blank" class="btn btn-ghost" style="padding: 6px;"><i class="fab fa-whatsapp" style="color: #25d366;"></i></a>
+                            <button class="btn btn-ghost" style="padding: 6px; color: var(--danger);" onclick="db.ref('orders/${key}').remove()"><i class="fas fa-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.prepend(tr);
+                });
+                document.getElementById('statIncome').innerText = `Rp ${kalkulasiOmzet.toLocaleString('id-ID')}`;
             });
         }
 
-        function deleteOrder(key) {
-            if(confirm("Hapus data pesanan ini?")) {
-                db.ref('orders/' + key).remove();
+        function clearFinishedHistory() {
+            if (confirm("Apakah Anda yakin ingin menghapus SEMUA pesanan dengan status 'Selesai'?")) {
+                db.ref('orders').once('value').then(s => {
+                    s.forEach(c => { if (c.val().status === 'Selesai') c.ref.remove(); });
+                });
             }
         }
-
-        function calculateOmset(orders) {
-            const now = new Date();
-            let daily = 0;
-
-            orders.forEach(order => {
-                const orderDate = new Date(order.date);
-                // Harian
-                if (orderDate.toDateString() === now.toDateString() && order.status === 'Selesai') {
-                    daily += order.price;
-                }
-            });
-
-            document.getElementById('omzetDaily').innerText = 'Rp ' + daily.toLocaleString();
-        }
-
-        // Initial Load
-        loadDashboard();
     </script>
 </body>
 </html>
